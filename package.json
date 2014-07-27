@@ -1,26 +1,28 @@
 {
-  "name": "realty-api",
-  "version": "0.0.1",
-  "private": true,
-  "scripts": {
-    "start": "node app"
-  },
-  "engines": {
-    "node": "0.10.x"
-  },
-  "dependencies": {
-    "express": "~3.3.4",
-    "jade": "~0.34.0",
-    "request": "~2.39.0",
-    "xml2json": "~0.4.0",
-    "tough-cookie": "~0.12.1"
-  },
-  "devDependencies": {
-    "grunt": "~0.4.1",
-    "grunt-develop": "~0.2.2",
-    "grunt-contrib-watch": "~0.5.3",
-    "request": "~2.27.0",
-    "time-grunt": "~0.1.1",
-    "load-grunt-tasks": "~0.2.0"
-  }
+    "name": "realty-api",
+    "version": "0.0.1",
+    "private": true,
+    "engines": {
+        "node": "0.10.x"
+    },
+    "scripts": {
+        "start": "node --harmony app.js"
+    },
+    "dependencies": {
+        "express": "~3.3.4",
+        "jade": "~0.34.0",
+        "request": "~2.39.0",
+        "xml2json": "~0.4.0",
+        "tough-cookie": "~0.12.1",
+        "url": "~0.10.1",
+        "underscore": "~1.6.0"
+    },
+    "devDependencies": {
+        "grunt": "~0.4.1",
+        "grunt-develop": "~0.2.2",
+        "grunt-contrib-watch": "~0.5.3",
+        "request": "~2.27.0",
+        "time-grunt": "~0.1.1",
+        "load-grunt-tasks": "~0.2.0"
+    }
 }

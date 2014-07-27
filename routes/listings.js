@@ -3,7 +3,7 @@ var mlsClient = require('../MLS/MLSClient')
 
 exports.list = function (req, res) {
 
-    mlsClient.getListings({}, function(error, data) {
+    mlsClient.getListings(req.query, function(error, data) {
         //var dataJSON = JSON.stringify(data);
         console.log(error + ' ' + data);
         if (!error) {
