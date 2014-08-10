@@ -34,12 +34,10 @@ function formatURLFromParams(params) {
     };
 
     var RETSQuery = formRETSQuery(params);
-    //listingUrlObj.query = listingUrlObj.query + '&Query' + RETSQuery;
     listingUrlObj.query.Query =  RETSQuery;
     var encoded = url.format(listingUrlObj);
-    var uri_dec = decodeURIComponent(encoded);
-    return uri_dec;
-    //'http://rets.mrmlsmatrix.com/rets/search.ashx?Query=(ListPrice=950000-1000000),(ZipCode=90004)';
+    var uriDec = decodeURIComponent(encoded);
+    return uriDec;
 }
 
 function getListings(params, cb) {
@@ -55,7 +53,7 @@ function getListings(params, cb) {
         trim: true,
         arrayNotation: false
     };
-    var request = mlsRequest.defaults({jar: true}); // jar enables cookies
+    var request = mlsRequest.defaults({jar: true}); // jar:true enables cookies
 
     request.get(loginUrl, function (error, response, body) {
         if (error) {
@@ -76,10 +74,8 @@ function getListings(params, cb) {
             }
             var json = parser.toJson(body, options); //returns a string containing the JSON structure by default
             cb(error, json);
-        });//.auth('XSWBMAINSTREET', 'AvQE5ryB', false);
-
+        });
     }).auth('XSWBMAINSTREET', 'AvQE5ryB', false);
-
 }
 
 module.exports = {

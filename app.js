@@ -3,12 +3,13 @@
  * Module dependencies.
  */
 
-var express = require('express')
-  , routes = require('./routes')
-  , user = require('./routes/user')
-  , listings = require('./routes/listings')
-  , http = require('http')
-  , path = require('path');
+var express = require('express');
+var routes = require('./routes');
+var user = require('./routes/user');
+var listings = require('./controllers/listings');
+var http = require('http');
+var path = require('path');
+var mongoose = require('mongoose');
 
 var app = express();
 
@@ -28,10 +29,27 @@ app.configure('development', function(){
   app.use(express.errorHandler());
 });
 
+
+// connect to Mongo when the app initializes
+mongoose.connect('mongodb://badgerDBUser:9-Honeybadgerdata@ds061158.mongolab.com:61158/realty');
+
+//var MongoClient = require('mongodb').MongoClient;
+//// Connect to the db
+//MongoClient.connect('mongodb://badgerDBUser:9-Honeybadgerdata@ds061158.mongolab.com:61158/realty', function(err, db) {
+//    if(err) {
+//        console.log('Failed to connect to db: ' + err);
+//    }
+//    else {
+//        console.log('Connected to badger DB');
+//        app.db = db;
+//    }
+//});
+
+
 app.get('/', routes.index);
 app.get('/users', user.list);
 app.get('/listings', listings.list);
 
 http.createServer(app).listen(app.get('port'), function(){
-  console.log("Express server listening on port " + app.get('port'));
+  console.log('Express server listening on port ' + app.get('port'));
 });
