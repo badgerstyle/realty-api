@@ -1,5 +1,4 @@
 var mlsRequest = require('request');
-var parser = require('xml2json');
 var url = require('url');
 //var _ = require('underscore');
 var xmlreader = require('xmlreader');
