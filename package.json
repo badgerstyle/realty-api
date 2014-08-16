@@ -12,12 +12,12 @@
     "express": "~3.3.4",
     "jade": "~0.34.0",
     "request": "~2.39.0",
-    "xml2json": "~0.4.0",
     "tough-cookie": "~0.12.1",
     "url": "~0.10.1",
-    "underscore": "~1.6.0",
     "mongodb": "~1.4.8",
-    "mongoose": "~3.8.14"
+    "mongoose": "~3.8.14",
+    "lodash": "~2.4.1",
+    "xmlreader": "~0.2.3"
   },
   "devDependencies": {
     "grunt": "~0.4.1",

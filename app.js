@@ -10,6 +10,7 @@ var listings = require('./controllers/listings');
 var http = require('http');
 var path = require('path');
 var mongoose = require('mongoose');
+global._ = require('lodash');
 
 var app = express();
 

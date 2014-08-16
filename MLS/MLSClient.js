@@ -1,7 +1,8 @@
 var mlsRequest = require('request');
 var parser = require('xml2json');
 var url = require('url');
-var _ = require('underscore');
+//var _ = require('underscore');
+var xmlreader = require('xmlreader');
 
 var inputs = {
     'listprice': 'ListPrice',
@@ -29,7 +30,8 @@ function formatURLFromParams(params) {
         pathname: '/rets/search.ashx',
         query : {
             'SearchType': 'Property',
-            'Class': 'listing_mrmls_resi'
+            'Class': 'listing_mrmls_resi',
+            'Format': 'COMPACT-DECODED'
         }
     };
 
@@ -72,8 +74,33 @@ function getListings(params, cb) {
                 cb('ERROR! return status was ' + response.statusCode);
                 return;
             }
-            var json = parser.toJson(body, options); //returns a string containing the JSON structure by default
-            cb(error, json);
+            xmlreader.read(body, function (err, res) {
+                if (err) {
+                    cb('Error parsing XML: ');
+                    return;
+                }
+                var atts = res.RETS.attributes();
+                if (atts.ReplyCode !== '0') {
+                    cb('Failed to make RETS request: ' + atts.ReplyCode + ' ' + atts.ReplyText);
+                    return;
+                }
+
+                var delimiter = '\t';
+                var keys = res.RETS.COLUMNS.text().split(delimiter);
+                keys.shift();
+                keys.pop();
+
+                var data = [];
+                var listings = res.RETS.DATA.array || [res.RETS.DATA];
+                listings.forEach(function(valueObj) {
+                    var values = valueObj.text().split(delimiter);
+                    values.shift();
+                    values.pop();
+                    var mlsObj = _.object(keys, values);
+                    data.push(mlsObj);
+                });
+                cb(null, data);
+            });
         });
     }).auth('XSWBMAINSTREET', 'AvQE5ryB', false);
 }
