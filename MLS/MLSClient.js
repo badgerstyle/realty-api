@@ -34,11 +34,9 @@ function formatURLFromParams(params) {
         }
     };
 
-    var RETSQuery = formRETSQuery(params);
-    listingUrlObj.query.Query =  RETSQuery;
+    listingUrlObj.query.Query =  formRETSQuery(params);
     var encoded = url.format(listingUrlObj);
-    var uriDec = decodeURIComponent(encoded);
-    return uriDec;
+    return decodeURIComponent(encoded);
 }
 
 function getListings(params, cb) {
@@ -46,17 +44,9 @@ function getListings(params, cb) {
     var loginUrl = 'http://rets.mrmlsmatrix.com/rets/login.ashx';
     var searchURL = formatURLFromParams(params);
 
-    var options = {
-        object: false,
-        reversible: false,
-        coerce: true,
-        sanitize: false,
-        trim: true,
-        arrayNotation: false
-    };
     var request = mlsRequest.defaults({jar: true}); // jar:true enables cookies
 
-    request.get(loginUrl, function (error, response, body) {
+    request.get(loginUrl, function (error) {
         if (error) {
             console.log(error);
             cb(error);
