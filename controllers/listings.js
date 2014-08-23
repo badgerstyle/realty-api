@@ -3,8 +3,8 @@ var mlsClient = require('../MLS/MLSClient');
 //var db = require('../app').db;
 var Listing = require('../models/Listing.js');
 var mongoose = require('mongoose');
-exports.list = function (req, res) {
 
+function search(req, res) {
     mlsClient.getListings(req.query, function(error, data) {
         console.log('get listings response: ' + error + ' ' + JSON.stringify(data));
         if (error) {
@@ -31,5 +31,25 @@ exports.list = function (req, res) {
 //            res.send('[1,2,3]');
         res.json(data);
     });
-};
+}
+
+function getImages(req, res) {
+    mlsClient.getImages(req.query, function(error, data) {
+        console.log('get listings response: ' + error + ' ' + JSON.stringify(data));
+        if (error) {
+            res.status(500);
+            res.json({'error': error});
+            return;
+        }
+        res.set('Content-Type', 'application/json');
+        res.json(data);
+    });
+}
+
+
+
+module.exports = {
+    search: search,
+    getImages: getImages
+}
 

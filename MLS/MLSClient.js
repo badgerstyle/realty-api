@@ -48,17 +48,17 @@ function loginToRETS(params) {
         var loginUrl = 'http://rets.mrmlsmatrix.com/rets/login.ashx';
         var mlsRequest = request.defaults({jar: true}); // jar:true enables cookies
         mlsRequest.get(loginUrl, function (error, data) {
-            console.log(data);
             if (error || data && data.statusCode / 100 !== 2) {
                 reject(error || 'ERROR! return status was ' + data.statusCode);
                 return;
             }
-            resolve([params, mlsRequest]);
+            console.log(data.body);
+            resolve(mlsRequest);
         }).auth('XSWBMAINSTREET', 'AvQE5ryB', false);
     });
 }
 
-function makeListingsCall(params, mlsRequest) {
+function makeListingsCall(mlsRequest, params) {
     return new Promise(function(resolve, reject) {
         var searchURL = formatURLFromParams(params);
         mlsRequest.get(searchURL, function (error, response, body) {
@@ -85,6 +85,7 @@ function makeListingsCall(params, mlsRequest) {
 
                 var delimiter = '\t';
                 var keys = res.RETS.COLUMNS.text().split(delimiter);
+                // shift and pop since there are extra leading and trailing tabs
                 keys.shift();
                 keys.pop();
 
@@ -104,30 +105,40 @@ function makeListingsCall(params, mlsRequest) {
 }
 
 
-function getImages(matrixUniqueID) {
-    var download = function(uri, filename){
-        request.head(uri, function(err, res, body){
-            console.log('content-type:', res.headers['content-type']);
-            console.log('content-length:', res.headers['content-length']);
-            request(uri).pipe(fs.createWriteStream(filename)).on('close', callback);
-        });
-    };
+function makeImagesCall(matrixUniqueID) {
+    return new Promise(function (resolve, reject) {
+        var download = function (uri, filename) {
+            request.head(uri, function (err, res, body) {
+                console.log('content-type:', res.headers['content-type']);
+                console.log('content-length:', res.headers['content-length']);
+                request(uri).pipe(fs.createWriteStream(filename)).on('close', callback);
+            });
+        };
 
-    download('https://www.google.com/images/srpr/logo3w.png', 'google.png', function(){
-        console.log('done');
+        download('https://www.google.com/images/srpr/logo3w.png', 'google.png', function () {
+            console.log('done');
+        });
+
     });
 }
 
 function getListings(params, cb) {
-    loginToRETS(params)
-        .spread(makeListingsCall)
+    loginToRETS()
+        .then(function(mlsRequest) {
+            return makeListingsCall(mlsRequest, params);
+        })
         .then(function(data) {
             cb(null, data);
-        }).catch(function(error) {
+        })
+        .catch(function(error) {
             cb(error);
         });
 }
 
+function getImages(matrixUniqueID, cb) {
+
+
+}
 
 module.exports = {
     getListings: getListings,
