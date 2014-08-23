@@ -9,14 +9,15 @@
     "start": "node --harmony app.js"
   },
   "dependencies": {
-    "express": "~3.3.4",
-    "jade": "~0.34.0",
-    "request": "~2.39.0",
-    "tough-cookie": "~0.12.1",
-    "url": "~0.10.1",
+    "bluebird": "~2.3.1",
+    "express": "^3.3.8",
+    "jade": "^0.34.1",
+    "lodash": "~2.4.1",
     "mongodb": "~1.4.8",
     "mongoose": "~3.8.14",
-    "lodash": "~2.4.1",
+    "request": "^2.40.0",
+    "tough-cookie": "~0.12.1",
+    "url": "~0.10.1",
     "xmlreader": "~0.2.3"
   },
   "devDependencies": {

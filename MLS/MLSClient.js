@@ -1,101 +1,15 @@
-var mlsRequest = require('request');
 var url = require('url');
-//var _ = require('underscore');
-var xmlreader = require('xmlreader');
+var fs = require('fs');
+
+var Promise = require('bluebird');
+var request = require('request');
+var xmlReader = require('xmlreader');
+var fields = require('./fields.json');
 
 var inputs = {
     'listprice': 'ListPrice',
     'zipcode': 'ZipCode'
 };
-
-var fields = [
-    'Acres',
-    'Appliances',
-    'Area',
-    'AttachedStructure',
-    'BasementSqft',
-    'BathsFull',
-    'BathsHalf',
-    'BathsOqtr',
-    'BathsTotal',
-    'BathsTqtr',
-    'Bedrooms',
-    'City',
-    'Cooling',
-    'County',
-    'CrossStreets',
-    'DirectionFaces',
-    'DoorFeatures',
-    'DrivingDirections',
-    'EatingArea',
-    'Elevation',
-    'EntryLevel',
-    'EntryLocation',
-    'ExteriorFeatures',
-    'Fencing',
-    'Fireplace',
-    'Floor',
-    'Foundation',
-    'GarageAttached',
-    'Heating',
-    'InteriorFeatures',
-    'LandFeeLease',
-    'Laundry',
-    'ListPrice',
-    'ListPriceExcludes',
-    'ListPriceIncludes',
-    'LotDimensions',
-    'LotFeatures',
-    'LotSquareFootage',
-    'Matrix_Unique_ID',
-    'MLnumber',
-    'MLS_ID',
-    'NumberCarportSpaces',
-    'NumberGarageSpaces',
-    'NumberParkingSpaces',
-    'NumberRemotes',
-    'NumberUncoveredSpaces',
-    'NumberUnits',
-    'Parking',
-    'Patio',
-    'PicCount',
-    'Pool',
-    'PropertyDescription',
-    'PropertySubType',
-    'Roofing',
-    'Rooms',
-    'SchoolDistrict',
-    'SchoolElementary',
-    'SchoolHigh',
-    'SchoolJuniorHigh',
-    'SecurityFeatures',
-    'SellingPrice',
-    'Spa',
-    'SquareFootageStructure',
-    'Status',
-    'Stories',
-    'StoriesTotal',
-    'StreetDirection',
-    'StreetDirectionSuffix',
-    'StreetName',
-    'StreetNumber',
-    'StreetNumberModifier',
-    'StreetSuffix',
-    'StreetSuffixModifier',
-    'StructuralCondition',
-    'Style',
-    'ThomasGuide',
-    'TimestampModified',
-    'TimestampPhotoModified',
-    'UnitNumber',
-    'Utilities',
-    'View',
-    'VirtualTour',
-    'WindowFeatures',
-    'YearBuilt',
-    'ZipCode',
-    'ZipCodePlus4'
-];
 
 function formatSingleRETSQuery(name, value) {
     return '(' + name + '=' + value + ')';
@@ -129,38 +43,43 @@ function formatURLFromParams(params) {
     return decodeURIComponent(encoded);
 }
 
-function getListings(params, cb) {
+function loginToRETS(params) {
+    return new Promise(function(resolve, reject) {
+        var loginUrl = 'http://rets.mrmlsmatrix.com/rets/login.ashx';
+        var mlsRequest = request.defaults({jar: true}); // jar:true enables cookies
+        mlsRequest.get(loginUrl, function (error, data) {
+            console.log(data);
+            if (error || data && data.statusCode / 100 !== 2) {
+                reject(error || 'ERROR! return status was ' + data.statusCode);
+                return;
+            }
+            resolve([params, mlsRequest]);
+        }).auth('XSWBMAINSTREET', 'AvQE5ryB', false);
+    });
+}
 
-    var loginUrl = 'http://rets.mrmlsmatrix.com/rets/login.ashx';
-    var searchURL = formatURLFromParams(params);
-
-    var request = mlsRequest.defaults({jar: true}); // jar:true enables cookies
-
-    request.get(loginUrl, function (error) {
-        if (error) {
-            console.log(error);
-            cb(error);
-            return;
-        }
-        request.get(searchURL, function (error, response, body) {
+function makeListingsCall(params, mlsRequest) {
+    return new Promise(function(resolve, reject) {
+        var searchURL = formatURLFromParams(params);
+        mlsRequest.get(searchURL, function (error, response, body) {
             if (error) {
                 console.log(error);
-                cb(error);
+                reject(error);
                 return;
             }
             if (response.statusCode / 100 !== 2) {
                 console.log('ERROR!');
-                cb('ERROR! return status was ' + response.statusCode);
+                reject('ERROR! return status was ' + response.statusCode);
                 return;
             }
-            xmlreader.read(body, function (err, res) {
+            xmlReader.read(body, function (err, res) {
                 if (err) {
-                    cb('Error parsing XML: ');
+                    reject('Error parsing XML: ');
                     return;
                 }
                 var atts = res.RETS.attributes();
                 if (atts.ReplyCode !== '0') {
-                    cb('Failed to make RETS request: ' + atts.ReplyCode + ' ' + atts.ReplyText);
+                    reject('Failed to make RETS request: ' + atts.ReplyCode + ' ' + atts.ReplyText);
                     return;
                 }
 
@@ -171,19 +90,46 @@ function getListings(params, cb) {
 
                 var data = [];
                 var listings = res.RETS.DATA.array || [res.RETS.DATA];
-                listings.forEach(function(valueObj) {
+                listings.forEach(function (valueObj) {
                     var values = valueObj.text().split(delimiter);
                     values.shift();
                     values.pop();
                     var mlsObj = _.object(keys, values);
                     data.push(mlsObj);
                 });
-                cb(null, data);
+                resolve(data);
             });
         });
-    }).auth('XSWBMAINSTREET', 'AvQE5ryB', false);
+    });
 }
 
+
+function getImages(matrixUniqueID) {
+    var download = function(uri, filename){
+        request.head(uri, function(err, res, body){
+            console.log('content-type:', res.headers['content-type']);
+            console.log('content-length:', res.headers['content-length']);
+            request(uri).pipe(fs.createWriteStream(filename)).on('close', callback);
+        });
+    };
+
+    download('https://www.google.com/images/srpr/logo3w.png', 'google.png', function(){
+        console.log('done');
+    });
+}
+
+function getListings(params, cb) {
+    loginToRETS(params)
+        .spread(makeListingsCall)
+        .then(function(data) {
+            cb(null, data);
+        }).catch(function(error) {
+            cb(error);
+        });
+}
+
+
 module.exports = {
-    getListings: getListings
+    getListings: getListings,
+    getImages: getImages
 };
