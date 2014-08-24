@@ -50,7 +50,8 @@ mongoose.connect('mongodb://badgerDBUser:9-Honeybadgerdata@ds061158.mongolab.com
 app.get('/', routes.index);
 app.get('/users', user.list);
 app.get('/listings/search', listings.search);
-app.get('/listings/images', listings.getImages);
+app.get('/listings/images/:id', listings.getImages);
+app.get('/listings/images/:id/:imageNumber', listings.getImage);
 
 http.createServer(app).listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));

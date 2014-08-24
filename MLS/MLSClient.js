@@ -43,16 +43,16 @@ function formatURLFromParams(params) {
     return decodeURIComponent(encoded);
 }
 
-function loginToRETS(params) {
+function loginToRETS(defaults) {
     return new Promise(function(resolve, reject) {
         var loginUrl = 'http://rets.mrmlsmatrix.com/rets/login.ashx';
-        var mlsRequest = request.defaults({jar: true}); // jar:true enables cookies
+        var mlsRequest = request.defaults(defaults); // jar:true enables cookies
         mlsRequest.get(loginUrl, function (error, data) {
             if (error || data && data.statusCode / 100 !== 2) {
                 reject(error || 'ERROR! return status was ' + data.statusCode);
                 return;
             }
-            console.log(data.body);
+            console.log('logged in');
             resolve(mlsRequest);
         }).auth('XSWBMAINSTREET', 'AvQE5ryB', false);
     });
@@ -104,43 +104,83 @@ function makeListingsCall(mlsRequest, params) {
     });
 }
 
+function fetchFile(mlsRequest, uri, filename, promise) {
+    mlsRequest.get(uri, function (error, response, body) {
+        if (error || response.statusCode !== 200) {
+            promise.resolve(error);
+            return;
+        }
+        data = "data:" + response.headers["content-type"] + ";base64," + new Buffer(body).toString('base64');
+        console.log(data);
+    });
+}
 
-function makeImagesCall(matrixUniqueID) {
+function makeImagesCall(mlsRequest, matrixUniqueID) {
     return new Promise(function (resolve, reject) {
-        var download = function (uri, filename) {
-            request.head(uri, function (err, res, body) {
-                console.log('content-type:', res.headers['content-type']);
-                console.log('content-length:', res.headers['content-length']);
-                request(uri).pipe(fs.createWriteStream(filename)).on('close', callback);
-            });
-        };
+        var uri = 'http://rets.mrmlsmatrix.com/rets/GetObject.ashx?Resource=Property&Type=LargePhoto&ID=' + matrixUniqueID + ':*&Location=0';
+//        fetchFile(mlsRequest, uri, 'realEstate.png', {resolve:resolve, reject:reject});
+        request(uri).pipe(fs.createWriteStream('realEstate.jpg'));
+    });
+}
 
-        download('https://www.google.com/images/srpr/logo3w.png', 'google.png', function () {
-            console.log('done');
+function makeImageCall(mlsRequest, matrixUniqueID, imageNumber) {
+
+    return new Promise(function(resolve, reject) {
+        var uri = 'http://rets.mrmlsmatrix.com/rets/GetObject.ashx?Resource=Property&Type=LargePhoto&ID=' + matrixUniqueID + ':' + imageNumber + '&Location=0';
+        mlsRequest.get(uri, function (error, response, body) {
+            if (error || response.statusCode !== 200) {
+                console.log(error);
+                reject(new Error(error));
+                return;
+            }
+            return resolve({contentType:response.headers['content-type'], body:body});
+            //data = "data:" + response.headers["content-type"] + ";base64," + new Buffer(body).toString('base64');
+
         });
-
     });
 }
 
 function getListings(params, cb) {
-    loginToRETS()
-        .then(function(mlsRequest) {
+    loginToRETS({jar: true})
+        .then(function (mlsRequest) {
             return makeListingsCall(mlsRequest, params);
         })
-        .then(function(data) {
+        .then(function (data) {
             cb(null, data);
         })
-        .catch(function(error) {
+        .catch(function (error) {
             cb(error);
         });
 }
 
 function getImages(matrixUniqueID, cb) {
+    loginToRETS({jar: true, encoding:null})
+        .then(function (mlsRequest) {
+            return makeImagesCall(mlsRequest, matrixUniqueID);
+        })
+        .then(function (data) {
+            cb(null, data);
+        })
+        .catch(function (error) {
+            cb(error);
+        });
+}
 
-
+function getImage(matrixUniqueID, imageNumber, cb) {
+    loginToRETS({jar: true, encoding:null})
+        .then(function (mlsRequest) {
+            return makeImageCall(mlsRequest, matrixUniqueID, imageNumber);
+        })
+        .then(function (data) {
+            cb(null, data);
+        })
+        .catch(function (error) {
+            cb(error);
+        });
 }
 
 module.exports = {
     getListings: getListings,
-    getImages: getImages
+    getImages: getImages,
+    getImage: getImage
 };
