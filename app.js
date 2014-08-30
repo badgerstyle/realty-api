@@ -5,8 +5,7 @@
 
 var express = require('express');
 var routes = require('./routes');
-var user = require('./routes/user');
-var listings = require('./controllers/listings');
+var user = require('./routes/users');
 var http = require('http');
 var path = require('path');
 var mongoose = require('mongoose');
@@ -48,10 +47,8 @@ mongoose.connect('mongodb://badgerDBUser:9-Honeybadgerdata@ds061158.mongolab.com
 
 
 app.get('/', routes.index);
-app.get('/users', user.list);
-app.get('/listings/search', listings.search);
-app.get('/listings/images/:id', listings.getImages);
-app.get('/listings/images/:id/:imageNumber', listings.getImage);
+
+listingRoutes = require('./routes/listings')(app);
 
 http.createServer(app).listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));

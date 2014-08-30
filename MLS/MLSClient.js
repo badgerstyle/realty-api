@@ -49,7 +49,7 @@ function loginToRETS(defaults) {
         var mlsRequest = request.defaults(defaults); // jar:true enables cookies
         mlsRequest.get(loginUrl, function (error, data) {
             if (error || data && data.statusCode / 100 !== 2) {
-                reject(error || 'ERROR! return status was ' + data.statusCode);
+                reject(error || new Error('ERROR! return status was ' + data.statusCode));
                 return;
             }
             console.log('logged in');
@@ -124,7 +124,6 @@ function makeImagesCall(mlsRequest, matrixUniqueID) {
 }
 
 function makeImageCall(mlsRequest, matrixUniqueID, imageNumber) {
-
     return new Promise(function(resolve, reject) {
         var uri = 'http://rets.mrmlsmatrix.com/rets/GetObject.ashx?Resource=Property&Type=LargePhoto&ID=' + matrixUniqueID + ':' + imageNumber + '&Location=0';
         mlsRequest.get(uri, function (error, response, body) {
@@ -135,7 +134,6 @@ function makeImageCall(mlsRequest, matrixUniqueID, imageNumber) {
             }
             return resolve({contentType:response.headers['content-type'], body:body});
             //data = "data:" + response.headers["content-type"] + ";base64," + new Buffer(body).toString('base64');
-
         });
     });
 }

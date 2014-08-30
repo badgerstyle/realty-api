@@ -1,27 +1,30 @@
-var mongoose = require('mongoose'),
-  Schema = mongoose.Schema,
-  crypto = require('crypto'),
-  _ = require('underscore'),
-  authTypes = ['github', 'twitter', 'facebook', 'google'];
-
+var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
+var crypto = require('crypto');
+var _ = require('underscore');
 
 /**
  * User Schema
  */
 var UserSchema = new Schema({
-  name: String,
-  email: String,
+  first: String,
+  last: String,
+  email: {
+      type : String,
+      required: true,
+      unique: true
+  },
   username: {
     type: String,
-    unique: true
+    unique: true,
+    required: true
   },
-  provider: String,
+  phone: {
+      type: String,
+      unique: true
+  },
   hashed_password: String,
-  salt: String,
-  facebook: {},
-  twitter: {},
-  github: {},
-  google: {}
+  salt: String
 });
 
 /**
