@@ -7,6 +7,7 @@ var xmlReader = require('xmlreader');
 var fields = require('./fields.json');
 
 var inputs = {
+    
     'listprice': 'ListPrice',
     'zipcode': 'ZipCode'
 };
