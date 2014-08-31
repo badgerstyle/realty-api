@@ -23,7 +23,7 @@ function formatSingleRETSQuery(name, value) {
 function setDefaults(orgParams) {
     var params = _.clone(orgParams);
     Object.keys(defaults).forEach(function(defaultKey) {
-        if (!defaultKey in params) {
+        if (!(defaultKey in params)) {
             params[defaultKey] = defaults[defaultKey];
         }
     });
