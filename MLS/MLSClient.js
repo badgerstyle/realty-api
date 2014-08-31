@@ -6,40 +6,61 @@ var request = require('request');
 var xmlReader = require('xmlreader');
 var fields = require('./fields.json');
 
-var inputs = {
-    
-    'listprice': 'ListPrice',
-    'zipcode': 'ZipCode'
+var APIToRETSQuery = {
+    listprice: 'ListPrice',
+    zipcode: 'ZipCode',
+    status: 'Status'
+};
+
+var defaults = {
+    status: 'A'
 };
 
 function formatSingleRETSQuery(name, value) {
     return '(' + name + '=' + value + ')';
 }
 
+function setDefaults(orgParams) {
+    var params = _.clone(orgParams);
+    Object.keys(defaults).forEach(function(defaultKey) {
+        if (!defaultKey in params) {
+            params[defaultKey] = defaults[defaultKey];
+        }
+    });
+    return params;
+}
+
 function formRETSQuery(params) {
     var pairs = [];
     Object.keys(params).forEach(function (param) {
-        if (param in inputs) {
-            pairs.push(formatSingleRETSQuery(inputs[param], params[param]));
+        param = param.toLowerCase();
+        if (param in APIToRETSQuery) {
+            pairs.push(formatSingleRETSQuery(APIToRETSQuery[param], params[param]));
         }
     });
     return pairs.join(',');
 }
 
 function formatURLFromParams(params) {
+    var query = {
+        SearchType: 'Property',
+            Class: 'listing_mrmls_resi',
+            Format: 'COMPACT-DECODED',
+            Count: '1',
+            Limit: params['pagesize'] || 50
+    };
+    if (params['page']) {
+        query.Offset = params['page'];
+    }
+    params = setDefaults(params);
+    query.Query = formRETSQuery(params);
+    query.Select = fields.join(',')
     var listingUrlObj = {
         protocol: 'http:',
         hostname: 'rets.mrmlsmatrix.com',
         pathname: '/rets/search.ashx',
-        query : {
-            'SearchType': 'Property',
-            'Class': 'listing_mrmls_resi',
-            'Format': 'COMPACT-DECODED',
-            'Select': fields.join(',')
-        }
+        query: query
     };
-
-    listingUrlObj.query.Query =  formRETSQuery(params);
     var encoded = url.format(listingUrlObj);
     return decodeURIComponent(encoded);
 }
@@ -62,6 +83,7 @@ function loginToRETS(defaults) {
 function makeListingsCall(mlsRequest, params) {
     return new Promise(function(resolve, reject) {
         var searchURL = formatURLFromParams(params);
+        console.log('search url: ' + searchURL);
         mlsRequest.get(searchURL, function (error, response, body) {
             if (error) {
                 console.log(error);
@@ -83,6 +105,10 @@ function makeListingsCall(mlsRequest, params) {
                     reject('Failed to make RETS request: ' + atts.ReplyCode + ' ' + atts.ReplyText);
                     return;
                 }
+                var data = {};
+
+                var countAtts = res.RETS.COUNT.attributes();
+                data.count = countAtts.Records;
 
                 var delimiter = '\t';
                 var keys = res.RETS.COLUMNS.text().split(delimiter);
@@ -90,15 +116,19 @@ function makeListingsCall(mlsRequest, params) {
                 keys.shift();
                 keys.pop();
 
-                var data = [];
-                var listings = res.RETS.DATA.array || [res.RETS.DATA];
-                listings.forEach(function (valueObj) {
-                    var values = valueObj.text().split(delimiter);
-                    values.shift();
-                    values.pop();
-                    var mlsObj = _.object(keys, values);
-                    data.push(mlsObj);
-                });
+                var theListings = [];
+                if (res.RETS.DATA) {
+                    var listings = res.RETS.DATA.array || [res.RETS.DATA];
+                    listings.forEach(function (valueObj) {
+                        var values = valueObj.text().split(delimiter);
+                        values.shift();
+                        values.pop();
+                        var mlsObj = _.object(keys, values);
+                        theListings.push(mlsObj);
+                    });
+                }
+                data.returnedCount = theListings.length;
+                data.listings = theListings;
                 resolve(data);
             });
         });
