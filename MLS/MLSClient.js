@@ -54,7 +54,7 @@ function formatURLFromParams(params) {
     }
     params = setDefaults(params);
     query.Query = formRETSQuery(params);
-    query.Select = fields.join(',')
+    query.Select = fields.join(',');
     var listingUrlObj = {
         protocol: 'http:',
         hostname: 'rets.mrmlsmatrix.com',
@@ -71,7 +71,7 @@ function loginToRETS(defaults) {
         var mlsRequest = request.defaults(defaults); // jar:true enables cookies
         mlsRequest.get(loginUrl, function (error, data) {
             if (error || data && data.statusCode / 100 !== 2) {
-                reject(error || new Error('ERROR! return status was ' + data.statusCode));
+                reject(new Error(error || ('ERROR! return status was ' + data.statusCode)));
                 return;
             }
             console.log('logged in');
@@ -135,24 +135,24 @@ function makeListingsCall(mlsRequest, params) {
     });
 }
 
-function fetchFile(mlsRequest, uri, filename, promise) {
-    mlsRequest.get(uri, function (error, response, body) {
-        if (error || response.statusCode !== 200) {
-            promise.resolve(error);
-            return;
-        }
-        data = "data:" + response.headers["content-type"] + ";base64," + new Buffer(body).toString('base64');
-        console.log(data);
-    });
-}
+//function fetchFile(mlsRequest, uri, filename, promise) {
+//    mlsRequest.get(uri, function (error, response, body) {
+//        if (error || response.statusCode !== 200) {
+//            promise.resolve(error);
+//            return;
+//        }
+//        data = "data:" + response.headers["content-type"] + ";base64," + new Buffer(body).toString('base64');
+//        console.log(data);
+//    });
+//}
 
-function makeImagesCall(mlsRequest, matrixUniqueID) {
-    return new Promise(function (resolve, reject) {
-        var uri = 'http://rets.mrmlsmatrix.com/rets/GetObject.ashx?Resource=Property&Type=LargePhoto&ID=' + matrixUniqueID + ':*&Location=0';
-//        fetchFile(mlsRequest, uri, 'realEstate.png', {resolve:resolve, reject:reject});
-        request(uri).pipe(fs.createWriteStream('realEstate.jpg'));
-    });
-}
+//function makeImagesCall(mlsRequest, matrixUniqueID) {
+//    return new Promise(function (resolve, reject) {
+//        var uri = 'http://rets.mrmlsmatrix.com/rets/GetObject.ashx?Resource=Property&Type=LargePhoto&ID=' + matrixUniqueID + ':*&Location=0';
+////        fetchFile(mlsRequest, uri, 'realEstate.png', {resolve:resolve, reject:reject});
+//        request(uri).pipe(fs.createWriteStream('realEstate.jpg'));
+//    });
+//}
 
 function makeImageCall(mlsRequest, matrixUniqueID, imageNumber) {
     return new Promise(function(resolve, reject) {
@@ -182,18 +182,18 @@ function getListings(params, cb) {
         });
 }
 
-function getImages(matrixUniqueID, cb) {
-    loginToRETS({jar: true, encoding:null})
-        .then(function (mlsRequest) {
-            return makeImagesCall(mlsRequest, matrixUniqueID);
-        })
-        .then(function (data) {
-            cb(null, data);
-        })
-        .catch(function (error) {
-            cb(error);
-        });
-}
+//function getImages(matrixUniqueID, cb) {
+//    loginToRETS({jar: true, encoding:null})
+//        .then(function (mlsRequest) {
+//            return makeImagesCall(mlsRequest, matrixUniqueID);
+//        })
+//        .then(function (data) {
+//            cb(null, data);
+//        })
+//        .catch(function (error) {
+//            cb(error);
+//        });
+//}
 
 function getImage(matrixUniqueID, imageNumber, cb) {
     loginToRETS({jar: true, encoding:null})
