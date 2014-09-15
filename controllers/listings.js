@@ -5,7 +5,7 @@ var Listing = require('../models/Listing.js');
 var mongoose = require('mongoose');
 
 function search(req, res) {
-    mlsClient.getListings(req.query, function(error, data) {
+    mlsClient.searchListings(req.query, function(error, data) {
         console.log('search response: ' + error + ' ' + JSON.stringify(data));
         if (error) {
             res.status(500);

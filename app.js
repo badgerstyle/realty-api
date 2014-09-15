@@ -48,7 +48,8 @@ mongoose.connect('mongodb://badgerDBUser:9-Honeybadgerdata@ds061158.mongolab.com
 
 app.get('/', routes.index);
 
-listingRoutes = require('./routes/listings')(app);
+require('./routes/listings')(app);
+require('./routes/users')(app);
 
 http.createServer(app).listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));

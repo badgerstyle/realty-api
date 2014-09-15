@@ -8,8 +8,11 @@ var fields = require('./fields.json');
 
 var APIToRETSQuery = {
     listprice: 'ListPrice',
-    zipcode: 'ZipCode',
-    status: 'Status'
+    status: 'Status',
+    streetnumber: 'StreetNumber',
+    streetname: 'StreetName',
+    city: 'City',
+    zipcode: 'ZipCode'
 };
 
 var defaults = {
@@ -108,7 +111,7 @@ function makeListingsCall(mlsRequest, params) {
                 var data = {};
 
                 var countAtts = res.RETS.COUNT.attributes();
-                data.count = countAtts.Records;
+                data.count = parseInt(countAtts.Records);
 
                 var delimiter = '\t';
                 var keys = res.RETS.COLUMNS.text().split(delimiter);
@@ -169,7 +172,7 @@ function makeImageCall(mlsRequest, matrixUniqueID, imageNumber) {
     });
 }
 
-function getListings(params, cb) {
+function searchListings(params, cb) {
     loginToRETS({jar: true})
         .then(function (mlsRequest) {
             return makeListingsCall(mlsRequest, params);
@@ -209,7 +212,7 @@ function getImage(matrixUniqueID, imageNumber, cb) {
 }
 
 module.exports = {
-    getListings: getListings,
-    getImages: getImages,
+    searchListings: searchListings,
+    //getImages: getImages,
     getImage: getImage
 };
