@@ -1,10 +1,11 @@
 var url = require('url');
-var fs = require('fs');
+//var fs = require('fs');
 
 var Promise = require('bluebird');
 var request = require('request');
 var xmlReader = require('xmlreader');
 var fields = require('./fields.json');
+var parseString = require('xml2js').parseString;
 
 var APIToRETSQuery = {
     listprice: 'ListPrice',
@@ -15,9 +16,16 @@ var APIToRETSQuery = {
     zipcode: 'ZipCode'
 };
 
+var retsBase = {
+    protocol: 'http:',
+    hostname: 'rets.mrmlsmatrix.com'
+};
+
 var defaults = {
     status: 'A'
 };
+
+var cityCodeLookup;
 
 function formatSingleRETSQuery(name, value) {
     return '(' + name + '=' + value + ')';
@@ -44,7 +52,13 @@ function formRETSQuery(params) {
     return pairs.join(',');
 }
 
-function formatURLFromParams(params) {
+function formatURLFromParams(mixedParams) {
+    var params = _.transform(mixedParams, function (result, val, key) {
+        result[key.toLowerCase()] = val.toLowerCase();
+    });
+    if (params.city) {
+        params.city = cityCodeLookup[params.city];
+    }
     var query = {
         SearchType: 'Property',
             Class: 'listing_mrmls_resi',
@@ -58,12 +72,10 @@ function formatURLFromParams(params) {
     params = setDefaults(params);
     query.Query = formRETSQuery(params);
     query.Select = fields.join(',');
-    var listingUrlObj = {
-        protocol: 'http:',
-        hostname: 'rets.mrmlsmatrix.com',
+    var listingUrlObj = _.extend(retsBase, {
         pathname: '/rets/search.ashx',
         query: query
-    };
+    });
     var encoded = url.format(listingUrlObj);
     return decodeURIComponent(encoded);
 }
@@ -83,7 +95,7 @@ function loginToRETS(defaults) {
     });
 }
 
-function makeListingsCall(mlsRequest, params) {
+function searchMLS(mlsRequest, params) {
     return new Promise(function(resolve, reject) {
         var searchURL = formatURLFromParams(params);
         console.log('search url: ' + searchURL);
@@ -138,6 +150,56 @@ function makeListingsCall(mlsRequest, params) {
     });
 }
 
+
+function ensureCityCodes(mlsRequest) {
+    return new Promise(function (resolve, reject) {
+        if (cityCodeLookup) {
+            resolve(mlsRequest);
+            return;
+        }
+
+        var cityMetaURLObj = _.extend(retsBase, {
+            pathname: 'rets/GetMetaData.ashx',
+            query: {
+                'TYPE': 'METADATA-LOOKUP_TYPE',
+                'ID': 'PROPERTY:CITY',
+                'Format': 'STANDARD-XML'
+            }
+        });
+        var encoded = url.format(cityMetaURLObj);
+        var cityMetaURL = decodeURIComponent(encoded);
+
+        console.log('city meta url: ' + cityMetaURL);
+        mlsRequest.get(cityMetaURL, function (error, response, body) {
+            if (error) {
+                console.log(error);
+                reject(error);
+                return;
+            }
+            if (response.statusCode / 100 !== 2) {
+                console.log('ERROR!');
+                reject('ERROR! return status was ' + response.statusCode);
+                return;
+            }
+
+            parseString(body, function (err, result) {
+                if (err) {
+                    resolve(new Error(err));
+                    return;
+                }
+                var entries = result.RETS.METADATA[0]['METADATA-LOOKUP_TYPE'][0].LookupType;
+                cityCodeLookup = {};
+                entries.forEach(function(entry) {
+                    cityCodeLookup[entry.LongValue[0].toLowerCase()] = entry.Value[0];
+                });
+
+                resolve(mlsRequest);
+            });
+        });
+    });
+}
+
+
 //function fetchFile(mlsRequest, uri, filename, promise) {
 //    mlsRequest.get(uri, function (error, response, body) {
 //        if (error || response.statusCode !== 200) {
@@ -174,8 +236,9 @@ function makeImageCall(mlsRequest, matrixUniqueID, imageNumber) {
 
 function searchListings(params, cb) {
     loginToRETS({jar: true})
+        .then(ensureCityCodes)
         .then(function (mlsRequest) {
-            return makeListingsCall(mlsRequest, params);
+            return searchMLS(mlsRequest, params);
         })
         .then(function (data) {
             cb(null, data);
