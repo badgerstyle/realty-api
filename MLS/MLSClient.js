@@ -132,7 +132,7 @@ function searchMLS(mlsRequest, params) {
                 keys.pop();
 
                 var theListings = [];
-                if (res.RETS.DATA) {
+                if (res.RETS && res.RETS.DATA) {
                     var listings = res.RETS.DATA.array || [res.RETS.DATA];
                     listings.forEach(function (valueObj) {
                         var values = valueObj.text().split(delimiter);
@@ -187,12 +187,17 @@ function ensureCityCodes(mlsRequest) {
                     resolve(new Error(err));
                     return;
                 }
+                if (!result.RETS || !result.RETS.METADATA) {
+                    resolve(new Error('missing expected response'));
+                    return;
+                }
                 var entries = result.RETS.METADATA[0]['METADATA-LOOKUP_TYPE'][0].LookupType;
                 cityCodeLookup = {};
                 entries.forEach(function(entry) {
-                    cityCodeLookup[entry.LongValue[0].toLowerCase()] = entry.Value[0];
+                    if (entry.LongValue && entry.LongValue.length > 0 && entry.Value && entry.Value.length > 0) {
+                        cityCodeLookup[entry.LongValue[0].toLowerCase()] = entry.Value[0];
+                    }
                 });
-
                 resolve(mlsRequest);
             });
         });

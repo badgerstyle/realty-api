@@ -10,11 +10,13 @@
   },
   "dependencies": {
     "bluebird": "~2.3.1",
+    "cors": "^2.4.2",
     "express": "^3.3.8",
     "jade": "^0.34.1",
     "lodash": "~2.4.1",
     "mongodb": "~1.4.8",
     "mongoose": "~3.8.14",
+    "oauth2-server": "^2.3.0",
     "request": "^2.40.0",
     "tough-cookie": "~0.12.1",
     "url": "~0.10.1",
