@@ -91,7 +91,7 @@ function loginToRETS(defaults) {
             }
             console.log('logged in');
             resolve(mlsRequest);
-        }).auth('XSWBMAINSTREET', 'AvQE5ryB', false);
+        }).auth('XSWBMAINSTREET', 'maxUXa!a5', false);
     });
 }
 
